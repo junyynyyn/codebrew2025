@@ -1,34 +1,41 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useEffect } from 'react'
+import * as THREE from 'three';
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  useEffect(() => {
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+
+    const canvReference = document.getElementById("threeJSCanvas");
+    const renderer = new THREE.WebGLRenderer({antialias: true, canvas: canvReference});
+    renderer.setSize( 2* window.innerWidth / 3, 2 * window.innerHeight / 3);
+
+    const geometry = new THREE.IcosahedronGeometry( 2, 5);
+    const material = new THREE.MeshBasicMaterial( { color: 0x00ffff } );
+    const ico = new THREE.Mesh( geometry, material );
+    scene.add( ico );
+    ico.material.wireframe = true;
+
+    camera.position.z = 5;
+
+    function animate() {
+      ico.rotation.x += 0.001;
+      ico.rotation.y += 0.001;
+      renderer.render( scene, camera );
+    }
+    renderer.setAnimationLoop( animate );
+
+  }, []);
 
   return (
-    <>
+    <div>
+      <p>It's an Audio Visualizer (not yet) Yayyyy</p>
       <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+        <canvas id="threeJSCanvas" />
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    </div>
   )
 }
 
