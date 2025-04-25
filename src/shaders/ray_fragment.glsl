@@ -50,8 +50,8 @@ float scene(vec3 p) {
 
     vec3 rep = vec3(3.0);
     vec3 q = mod(p + 0.5 * rep, rep) - 0.5 * rep;
-    float octahedronDis = sdOctahedron(vec3(q.x, q.y + 1.0, q.z), 0.5);
-    // float sphere3Dis = distance(p, vec3(cos(u_time), cos(u_time), 0)) - 0.5;
+    float loopedY = mod(q.y + u_time, 3.5) - 1.0;
+    float octahedronDis = sdOctahedron(vec3(q.x, loopedY, q.z), 0.5);
 
     return octahedronDis;
 }
@@ -66,7 +66,7 @@ vec3 sceneCol(vec3 p) {
     vec3 color1 = vec3(0,1,1);
     vec3 color2 = vec3(0.8, 0, 0.8);
 
-    return color1;
+    return mix(color1, color2, abs(sin(u_time)));
 }
 
 vec3 normal(vec3 p) 
@@ -126,6 +126,6 @@ void main() {
         float ambient = u_ambientIntensity;
 
         vec3 color = u_lightColor * (sceneCol(hp) * (spec + ambient + diff));
-        gl_FragColor = vec4(color, 1);
+        gl_FragColor = vec4(color, 1.0);
     }
 }
