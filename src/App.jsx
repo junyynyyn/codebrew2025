@@ -6,6 +6,7 @@ import { OrbitControls } from 'https://esm.sh/three/examples/jsm/controls/OrbitC
 
 import rayVertex from './shaders/ray_vertex.glsl';
 import rayFragment from './shaders/ray_fragment.glsl';
+import song from './assets/lucy.mp3'
 
 function App() {
   useEffect(() => {
