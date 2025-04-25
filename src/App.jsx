@@ -69,6 +69,28 @@ function App() {
     const VECTOR3ZERO = new THREE.Vector3(0,0,0);
     let time = Date.now();
 
+    // Audio Player/Analysis
+    const play = () => {
+      // create an AudioListener and add it to the camera
+      const listener = new THREE.AudioListener()
+      cameraRef.current.add(listener)
+  
+      // create a global audio source
+      const sound = new THREE.Audio(listener)
+  
+      // load a sound and set it as the Audio object's buffer
+      const audioLoader = new THREE.AudioLoader();
+      audioLoader.load( song , function( buffer ) {
+        sound.setBuffer( buffer );
+        sound.setLoop( true );
+        sound.setVolume( 0.5 );
+        sound.play();
+  
+        // create an AudioAnalyser, passing in the sound and desired fftSize
+        analyser = new THREE.AudioAnalyser( sound, 32 );
+      });
+    }
+
     function animate() {
       requestAnimationFrame(animate);
       cameraForwardPos = camera.position.clone().add(camera.getWorldDirection(VECTOR3ZERO).multiplyScalar(camera.near));
