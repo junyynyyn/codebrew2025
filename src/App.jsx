@@ -9,6 +9,28 @@ import rayFragment from './shaders/ray_fragment.glsl';
 import song from './assets/lucy.mp3'
 
 function App() {
+   // Audio Player/Analysis
+   const play = (cameraRef) => {
+    // create an AudioListener and add it to the camera
+    const listener = new THREE.AudioListener()
+    cameraRef.add(listener)
+
+    // create a global audio source
+    const sound = new THREE.Audio(listener)
+
+    // load a sound and set it as the Audio object's buffer
+    const audioLoader = new THREE.AudioLoader();
+    audioLoader.load( song , function( buffer ) {
+      sound.setBuffer( buffer );
+      sound.setLoop( true );
+      sound.setVolume( 0.5 );
+      sound.play();
+
+      // create an AudioAnalyser, passing in the sound and desired fftSize
+      analyser = new THREE.AudioAnalyser( sound, 32 );
+    });
+  }
+
   useEffect(() => {
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
@@ -59,6 +81,7 @@ function App() {
       u_shininess: { value: 16},
 
       u_time: {value: 0}, 
+      u_music_displ: {value: 0}
     }
 
     rayMat.uniforms = uniforms;
@@ -70,27 +93,7 @@ function App() {
     const VECTOR3ZERO = new THREE.Vector3(0,0,0);
     let time = Date.now();
 
-    // Audio Player/Analysis
-    const play = () => {
-      // create an AudioListener and add it to the camera
-      const listener = new THREE.AudioListener()
-      cameraRef.current.add(listener)
-  
-      // create a global audio source
-      const sound = new THREE.Audio(listener)
-  
-      // load a sound and set it as the Audio object's buffer
-      const audioLoader = new THREE.AudioLoader();
-      audioLoader.load( song , function( buffer ) {
-        sound.setBuffer( buffer );
-        sound.setLoop( true );
-        sound.setVolume( 0.5 );
-        sound.play();
-  
-        // create an AudioAnalyser, passing in the sound and desired fftSize
-        analyser = new THREE.AudioAnalyser( sound, 32 );
-      });
-    }
+    play(camera);
 
     function animate() {
       requestAnimationFrame(animate);
@@ -101,7 +104,18 @@ function App() {
       renderer.render( scene, camera );
 
       uniforms.u_time.value = (Date.now() - time) / 1000;
-      // Controls.update();
+
+      if (analyser) {
+        // get the average frequency of the sound
+        const data = analyser.getFrequencyData();
+        for(let i = 0; i < 16; i++){
+          console.log(data[i]);
+        }
+        line.geometry.attributes.position.needsUpdate = true;
+      }
+
+      // uniforms.u_music_displ.value = analyser.data.[i];
+
     }
     animate();
   }, []);
