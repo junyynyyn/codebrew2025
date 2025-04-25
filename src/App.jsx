@@ -6,7 +6,7 @@ import { OrbitControls } from 'https://esm.sh/three/examples/jsm/controls/OrbitC
 
 import rayVertex from './shaders/ray_vertex.glsl';
 import rayFragment from './shaders/ray_fragment.glsl';
-import song from './assets/lucy.mp3'
+import song from './assets/sample_song.mp3'
 
 function App() {
    // Audio Player/Analysis
@@ -110,6 +110,7 @@ function App() {
         // get the average frequency of the sound
         const data = analyser.getFrequencyData();
         uniforms.u_musicDispl.value = data[0]
+        console.log(uniforms.u_musicDispl.value = data[0])
         // for(let i = 0; i < 16; i++){
         //   console.log(data[i]);
         // }

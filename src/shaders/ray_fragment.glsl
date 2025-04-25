@@ -58,11 +58,10 @@ float scene(vec3 p) {
     float loopedY = mod(q.y + u_time, 3.5) - 1.0;
     float octahedronDis;
     if (u_musicDispl != 0.0) {
-        octahedronDis = sdOctahedron(vec3(q.x, loopedY, q.z), mapRange(u_musicDispl, 0.0, 255.0, 0.0, 1.0));
+        octahedronDis = sdOctahedron(vec3(q.x, loopedY, q.z), mapRange(u_musicDispl, 180.0, 255.0, 0.0, 1.0));
     } else {
         octahedronDis = sdOctahedron(vec3(q.x, loopedY, q.z), 0.3);
     }
-
 
     return octahedronDis;
 }
@@ -77,7 +76,7 @@ vec3 sceneCol(vec3 p) {
     vec3 color1 = vec3(0,1,1);
     vec3 color2 = vec3(0.8, 0, 0.8);
 
-    return mix(color1, color2, abs(sin(u_time)));
+    return mix(color1, color2, mapRange(u_musicDispl, 180.0, 255.0, 0.0, 1.0));
 }
 
 vec3 normal(vec3 p) 
