@@ -10,14 +10,10 @@ import song from './assets/lucy.mp3'
 
 function App() {
    // Audio Player/Analysis
-   const play = (cameraRef) => {
-    // create an AudioListener and add it to the camera
-    const listener = new THREE.AudioListener()
-    cameraRef.add(listener)
+   let analyser
+   let sound
 
-    // create a global audio source
-    const sound = new THREE.Audio(listener)
-
+   const play = () => {
     // load a sound and set it as the Audio object's buffer
     const audioLoader = new THREE.AudioLoader();
     audioLoader.load( song , function( buffer ) {
@@ -35,6 +31,13 @@ function App() {
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
     camera.position.z = 5;
+
+    // create an AudioListener and add it to the camera
+    const listener = new THREE.AudioListener()
+    camera.add(listener)
+   
+    // create a global audio source
+    sound = new THREE.Audio(listener)
 
     const canvReference = document.getElementById("threeJSCanvas");
     const renderer = new THREE.WebGLRenderer({antialias: true, canvas: canvReference});
@@ -81,7 +84,7 @@ function App() {
       u_shininess: { value: 16},
 
       u_time: {value: 0}, 
-      u_music_displ: {value: 0}
+      u_musicDispl: {value: 0}
     }
 
     rayMat.uniforms = uniforms;
@@ -92,8 +95,6 @@ function App() {
     let cameraForwardPos = new THREE.Vector3(0, 0, -1);
     const VECTOR3ZERO = new THREE.Vector3(0,0,0);
     let time = Date.now();
-
-    play(camera);
 
     function animate() {
       requestAnimationFrame(animate);
@@ -108,10 +109,10 @@ function App() {
       if (analyser) {
         // get the average frequency of the sound
         const data = analyser.getFrequencyData();
-        for(let i = 0; i < 16; i++){
-          console.log(data[i]);
-        }
-        line.geometry.attributes.position.needsUpdate = true;
+        uniforms.u_musicDispl.value = data[0]
+        // for(let i = 0; i < 16; i++){
+        //   console.log(data[i]);
+        // }
       }
 
       // uniforms.u_music_displ.value = analyser.data.[i];
