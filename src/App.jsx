@@ -81,9 +81,6 @@ function App() {
       // Controls.update();
     }
     animate();
-
-
-
   }, []);
 
   return (
@@ -92,6 +89,7 @@ function App() {
       <div>
         <canvas id="threeJSCanvas" />
       </div>
+      <button onClick={play}>play</button>
     </div>
   )
 }
