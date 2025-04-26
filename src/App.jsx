@@ -16,8 +16,10 @@ function App() {
   const lineRef = useRef(null);
   const lineRef2 = useRef(null);
   const meshRef = useRef(null)
+  const meshRef2 = useRef(null)
 
   const [previewUrl, setPreviewUrl] = useState('');
+  const speedRef = useRef(0.001)
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
@@ -115,33 +117,43 @@ function App() {
     });
     const geometry = new THREE.IcosahedronGeometry(2, 10)
     const mesh = new THREE.Mesh(geometry, mat)
+
     scene.add(mesh)
     mesh.material.wireframe = true
     meshRef.current = mesh
+
+    const mesh2 = new THREE.Mesh(geometry, mat)
+    scene.add(mesh2)
+    mesh2.material.wireframe = true
+    meshRef2.current = mesh2
+
 
     camera.position.z = 5;
 
     // Animation loop
     function animate() {
       uniforms.u_time.value += 0.01;
-      meshRef.current.rotation.x += 0.001
-      meshRef.current.rotation.y += 0.001
+      meshRef.current.rotation.x += speedRef.current
+      meshRef.current.rotation.y += speedRef.current
       if (analyserRef.current) {
         const data = analyserRef.current.getFrequencyData();
         const avg = analyserRef.current.getAverageFrequency();
+        
+        speedRef.current = avg / 5000
+        console.log(speedRef)
+        
         let mids = 0
         for (let i = 8; i < 12; i++) {
           mids += data[i]
         }
         mids /= 4
         meshRef.current.material.uniforms.u_color.value.setHSL(mids / 256, 1.0, 0.5);
-        // meshRef.current.scale.x = analyserRef.current.getAverageFrequency() / 50
-        // meshRef.current.scale.y = analyserRef.current.getAverageFrequency() / 50
-        // meshRef.current.scale.z = analyserRef.current.getAverageFrequency() / 50
+        meshRef.current.scale.x = analyserRef.current.getAverageFrequency() / 50
+        meshRef.current.scale.y = analyserRef.current.getAverageFrequency() / 50
+        meshRef.current.scale.z = analyserRef.current.getAverageFrequency() / 50
 
         uniforms.u_frequency.value = analyserRef.current.getAverageFrequency();
         // uniforms.u_time.value = clock.getElapsedTime();
-        console.log(uniforms.u_frequency.value)
       }
       renderer.render(scene, camera);
     }
