@@ -2,11 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import * as THREE from 'three';
 import './App.css';
 
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
-import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass';
-
 import rayVertex from './shaders/ray_vertex.glsl';
 import rayFragment from './shaders/ray_fragment.glsl';
 
