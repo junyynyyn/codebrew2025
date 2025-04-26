@@ -2,6 +2,11 @@ import { useState, useRef, useEffect } from 'react';
 import * as THREE from 'three';
 import './App.css';
 
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass';
+
 function App() {
   const cameraRef = useRef(null);
   const analyserRef = useRef(null);
@@ -9,6 +14,8 @@ function App() {
   const listenerRef = useRef(null);
   const sceneRef = useRef(null);
   const lineRef = useRef(null);
+  const lineRef2 = useRef(null);
+  const meshRef = useRef(null)
 
   const [previewUrl, setPreviewUrl] = useState('');
 
@@ -89,33 +96,50 @@ function App() {
 
     const canvReference = document.getElementById("threeJSCanvas");
     const renderer = new THREE.WebGLRenderer({ antialias: true, canvas: canvReference });
-    renderer.setSize(2 * window.innerWidth / 3, 2 * window.innerHeight / 3);
 
-    // Create visualization line
-    const material = new THREE.LineBasicMaterial({ color: 0x00ffff });
-    const points = [];
-    for (let i = 0; i < 16; i++) {
-      points.push(new THREE.Vector3(i - 8, 0, -5));
+    renderer.setSize(window.innerWidth,window.innerHeight);
+
+
+    const uniforms = {
+      u_resolution: {type: 'v2', value: new THREE.Vector2(window.innerWidth, window.innerHeight)},
+      u_time: {type: 'f', value: 0.0},
+      u_frequency: {value: 0.0},
+      u_color: { value: new THREE.Color(1, 1, 1) }
     }
-
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    const line = new THREE.Line(geometry, material);
-    scene.add(line);
-    lineRef.current = line;
+    const mat = new THREE.ShaderMaterial({
+      uniforms,
+      vertexShader: document.getElementById('vertexshader').textContent,
+      fragmentShader: document.getElementById('fragmentshader').textContent
+    });
+    const geometry = new THREE.IcosahedronGeometry(2, 10)
+    const mesh = new THREE.Mesh(geometry, mat)
+    scene.add(mesh)
+    mesh.material.wireframe = true
+    meshRef.current = mesh
 
     camera.position.z = 5;
 
     // Animation loop
     function animate() {
+      uniforms.u_time.value += 0.01;
+      meshRef.current.rotation.x += 0.001
+      meshRef.current.rotation.y += 0.001
       if (analyserRef.current) {
         const data = analyserRef.current.getFrequencyData();
-        const positions = lineRef.current.geometry.attributes.position.array;
-        
-        for (let i = 0; i < 16; i++) {
-          positions[i * 3 + 1] = data[i] / 100;
+        const avg = analyserRef.current.getAverageFrequency();
+        let mids = 0
+        for (let i = 8; i < 12; i++) {
+          mids += data[i]
         }
-        
-        lineRef.current.geometry.attributes.position.needsUpdate = true;
+        mids /= 4
+        meshRef.current.material.uniforms.u_color.value.setHSL(mids / 256, 1.0, 0.5);
+        // meshRef.current.scale.x = analyserRef.current.getAverageFrequency() / 50
+        // meshRef.current.scale.y = analyserRef.current.getAverageFrequency() / 50
+        // meshRef.current.scale.z = analyserRef.current.getAverageFrequency() / 50
+
+        uniforms.u_frequency.value = analyserRef.current.getAverageFrequency();
+        // uniforms.u_time.value = clock.getElapsedTime();
+        console.log(uniforms.u_frequency.value)
       }
       renderer.render(scene, camera);
     }
