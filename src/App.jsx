@@ -2,21 +2,30 @@ import { useState, useRef, useEffect } from 'react';
 import * as THREE from 'three';
 import './App.css';
 
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass';
+
 function App() {
   const cameraRef = useRef(null);
   const analyserRef = useRef(null);
   const soundRef = useRef(null);
   const listenerRef = useRef(null);
   const sceneRef = useRef(null);
-  const lineRef = useRef(null);
+  const meshRef = useRef(null)
+  const meshRef2 = useRef(null)
 
   const [previewUrl, setPreviewUrl] = useState('');
+  const speedRef = useRef(0.001)
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     
     if (file && file.type === 'audio/mpeg') {
       // Clean up previous audio if exists
+      document.getElementById("track-name").innerText = file.name; // Update the track name
+      document.getElementById("input-overlay").style.display = "none"; // Hide the input overlay
       if (soundRef.current) {
         soundRef.current.stop();
         if (listenerRef.current) {
@@ -82,33 +91,82 @@ function App() {
 
     const canvReference = document.getElementById("threeJSCanvas");
     const renderer = new THREE.WebGLRenderer({ antialias: true, canvas: canvReference });
-    renderer.setSize(2 * window.innerWidth / 3, 2 * window.innerHeight / 3);
 
-    // Create visualization line
-    const material = new THREE.LineBasicMaterial({ color: 0x00ffff });
-    const points = [];
-    for (let i = 0; i < 16; i++) {
-      points.push(new THREE.Vector3(i - 8, 0, -5));
+    renderer.setSize(window.innerWidth,window.innerHeight);
+
+
+    const uniforms = {
+      u_resolution: {type: 'v2', value: new THREE.Vector2(window.innerWidth, window.innerHeight)},
+      u_time: {type: 'f', value: 0.0},
+      u_frequency: {value: 0.0},
+      u_color: { value: new THREE.Color(1, 1, 1) }
     }
+    const mat = new THREE.ShaderMaterial({
+      uniforms,
+      vertexShader: document.getElementById('vertexshader').textContent,
+      fragmentShader: document.getElementById('fragmentshader').textContent
+    });
 
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    const line = new THREE.Line(geometry, material);
-    scene.add(line);
-    lineRef.current = line;
+    const uniforms2 = {
+      u_resolution: { type: 'v2', value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+      u_time: { type: 'f', value: 0.0 },
+      u_frequency: { value: 0.0 },
+      u_color: { value: new THREE.Color(1, 1, 1) } // different base color
+    };
+
+    const mat2 = new THREE.ShaderMaterial({
+      uniforms: uniforms2,
+      vertexShader: document.getElementById('vertexshader').textContent,
+      fragmentShader: document.getElementById('fragmentshader').textContent
+    });
+
+    const geometry = new THREE.IcosahedronGeometry(2, 10)
+    const mesh = new THREE.Mesh(geometry, mat)
+
+    scene.add(mesh)
+    mesh.material.wireframe = true
+    meshRef.current = mesh
+
+    const mesh2 = new THREE.Mesh(geometry, mat2)
+    scene.add(mesh2)
+    mesh2.material.wireframe = true
+    meshRef2.current = mesh2
+
 
     camera.position.z = 5;
 
     // Animation loop
     function animate() {
+      uniforms.u_time.value += 0.01;
+      meshRef.current.rotation.x += speedRef.current
+      meshRef.current.rotation.y += speedRef.current
+      uniforms2.u_time.value += 0.01;
+      meshRef2.current.rotation.x += speedRef.current
+      meshRef2.current.rotation.y += speedRef.current
       if (analyserRef.current) {
         const data = analyserRef.current.getFrequencyData();
-        const positions = lineRef.current.geometry.attributes.position.array;
+        const avg = analyserRef.current.getAverageFrequency();
         
-        for (let i = 0; i < 16; i++) {
-          positions[i * 3 + 1] = data[i] / 100;
+        speedRef.current = avg / 5000
+        console.log(speedRef)
+        
+        let mids = 0
+        for (let i = 8; i < 12; i++) {
+          mids += data[i]
         }
-        
-        lineRef.current.geometry.attributes.position.needsUpdate = true;
+        mids /= 4
+        if((mids / 255 )< 0.66){
+          mids *= 1.5
+        }
+        meshRef.current.material.uniforms.u_color.value.setHSL(mids / 255, 1.0, 0.5);
+        meshRef2.current.material.uniforms.u_color.value.setHSL(1 - (mids / 255), 1.0, 0.5);
+        meshRef.current.scale.x = analyserRef.current.getAverageFrequency() / 50
+        meshRef.current.scale.y = analyserRef.current.getAverageFrequency() / 50
+        meshRef.current.scale.z = analyserRef.current.getAverageFrequency() / 50
+
+        uniforms.u_frequency.value = analyserRef.current.getAverageFrequency();
+        uniforms2.u_frequency.value = analyserRef.current.getAverageFrequency();
+        // uniforms.u_time.value = clock.getElapsedTime();
       }
       renderer.render(scene, camera);
     }
@@ -129,17 +187,36 @@ function App() {
 
   return (
     <div>
+      <h1>mp.3d</h1>
+      <div className="input-overlay" id="input-overlay">
+        <div className="input-content">
+          <h3>Upload your song</h3>
+          <input
+            className="file-input"
+            type="file"
+            accept=".mp3,audio/mpeg"
+            onChange={handleFileChange}
+          />
+        </div>
+        <div className="colour-overlay">
+        </div>
+      </div>
+
+
       <div>
         <canvas id="threeJSCanvas" />
       </div>
-      <button onClick={play}>play</button>
-      <div>
-        <h2>Upload MP3 File</h2>
-        <input
-          type="file"
-          accept=".mp3,audio/mpeg"
-          onChange={handleFileChange}
-        />
+      <div className="audio-track">
+        <div className="left-content">
+          <div className="album-art"></div>
+          <div className="track">
+            <div className="track-name" id="track-name">Untitled</div>
+          </div>
+        </div>
+        <div className="pause-play-button">
+          <button onClick={play}>play</button>
+          <button onClick={() => { if (soundRef.current) soundRef.current.stop(); }}>stop</button>
+        </div>
       </div>
     </div>
   );
