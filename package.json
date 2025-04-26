@@ -14,7 +14,8 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwindcss": "^4.1.4",
-    "three": "^0.176.0"
+    "three": "^0.176.0",
+    "vite-plugin-glsl": "^1.4.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",

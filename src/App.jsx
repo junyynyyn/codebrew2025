@@ -2,6 +2,9 @@ import { useState, useRef, useEffect } from 'react';
 import * as THREE from 'three';
 import './App.css';
 
+import rayVertex from './shaders/ray_vertex.glsl';
+import rayFragment from './shaders/ray_fragment.glsl';
+
 function App() {
   const cameraRef = useRef(null);
   const analyserRef = useRef(null);
@@ -84,6 +87,13 @@ function App() {
     const renderer = new THREE.WebGLRenderer({ antialias: true, canvas: canvReference });
     renderer.setSize(2 * window.innerWidth / 3, 2 * window.innerHeight / 3);
 
+    const backgroundColor = new THREE.Color(0x3399ee);
+    renderer.setClearColor(backgroundColor, 1);
+
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(1,1,1);
+    scene.add(light);
+
     // Create visualization line
     const material = new THREE.LineBasicMaterial({ color: 0x00ffff });
     const points = [];
@@ -98,8 +108,53 @@ function App() {
 
     camera.position.z = 5;
 
+    // Raymarching Plane
+    const rayPlane = new THREE.PlaneGeometry();
+    const rayMat = new THREE.ShaderMaterial();
+    const rayMarchPlane = new THREE.Mesh(rayPlane, rayMat);
+
+    const nearPlaneWidth = camera.near * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect * 2;
+    const nearPlaneHeight = nearPlaneWidth / camera.aspect;
+    rayMarchPlane.scale.set(nearPlaneWidth, nearPlaneHeight, 1);
+
+    const uniforms = {
+      u_eps: {value: 0.01},
+      u_maxDis: {value: 1000},
+      u_maxSteps: {value: 100},
+
+      u_clearColor: {value: backgroundColor},
+
+      u_camPos: { value: camera.position },
+      u_camToWorldMat: { value: camera.matrixWorld },
+      u_camInvProjMat: { value: camera.projectionMatrixInverse },
+
+      u_lightDir: { value: light.position },
+      u_lightColor: {value: light.color },
+
+      u_diffIntensity: { value: 0.5 },
+      u_specIntensity: { value: 3},
+      u_ambientIntensity: { value: 0.15 },
+      u_shininess: { value: 16},
+
+      u_time: {value: 0}, 
+      u_musicDispl: {value: 0}
+    }
+
+    rayMat.uniforms = uniforms;
+    rayMat.vertexShader = rayVertex;
+    rayMat.fragmentShader = rayFragment;
+    scene.add(rayMarchPlane);
+
+    let cameraForwardPos = new THREE.Vector3(0, 0, -1);
+    const VECTOR3ZERO = new THREE.Vector3(0,0,0);
+    let time = Date.now();
+
     // Animation loop
     function animate() {
+      cameraForwardPos = camera.position.clone().add(camera.getWorldDirection(VECTOR3ZERO).multiplyScalar(camera.near));
+      rayMarchPlane.position.copy(cameraForwardPos);
+      rayMarchPlane.rotation.copy(camera.rotation);
+
       if (analyserRef.current) {
         const data = analyserRef.current.getFrequencyData();
         const positions = lineRef.current.geometry.attributes.position.array;
@@ -107,9 +162,11 @@ function App() {
         for (let i = 0; i < 16; i++) {
           positions[i * 3 + 1] = data[i] / 100;
         }
+        uniforms.u_musicDispl.value = data[0];
         
         lineRef.current.geometry.attributes.position.needsUpdate = true;
       }
+
       renderer.render(scene, camera);
     }
 
