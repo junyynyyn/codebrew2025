@@ -142,18 +142,21 @@ float scene(vec3 p) {
     vec3 torus_rotation2 = rotateZ(origin, -0.2);
     torus_rotation2 = rotateY(origin, u_time*0.2);
 
-    float dia1 = sdOctahedron(origin_rotation1 + vec3(3, 0, 0), mapRange(u_musicDispl, 180.0, 240.0, 0.2, 0.6));
+    float min_range_val = 60.0;
+    float max_range_val = 100.0;
+
+    float dia1 = sdOctahedron(origin_rotation1 + vec3(3, 0, 0), mapRange(u_musicDispl, 60.0, 100.0, 0.2, 0.6));
     
-    float dia2 = sdOctahedron(origin_rotation2 + vec3(3.5, 0, 0), mapRange(u_musicDispl, 160.0, 240.0, 0.2, 0.6));
+    float dia2 = sdOctahedron(origin_rotation2 + vec3(3.5, 0, 0), mapRange(u_musicDispl, 60.0, 100.0, 0.2, 0.6));
     
-    float sphere1 = sdSphere(origin_rotation3 + vec3(3, 0, 0), mapRange(u_musicDispl, 180.0, 240.0, 0.4, 0.6));
+    float sphere1 = sdSphere(origin_rotation3 + vec3(3, 0, 0), mapRange(u_musicDispl, 60.0, 100.0, 0.4, 0.6));
 
     float sphereSmall1 = sdSphere(origin_rotation1 + vec3(3, 0, 3), 0.2);
     float sphereSmall2 = sdSphere(origin_rotation1 + vec3(3, 0, -3), 0.2);
     float sphereSmall3 = sdSphere(origin_rotation1 + vec3(0, 0, 3), 0.2);
 
     float taurus1 = sdTorus(torus_rotation, vec2(2, 0.05));
-    float taurus2 = sdTorus(torus_rotation2, vec2(5, mapRange(u_musicDispl, 180.0, 240.0, 0.03, 0.1)));
+    float taurus2 = sdTorus(torus_rotation2, vec2(5, mapRange(u_musicDispl, 60.0, 100.0, 0.03, 0.1)));
 
     const int numValues = 8;
     float shapes[numValues] = float[numValues](dia1, dia2, sphere1, sphereSmall1, sphereSmall2, sphereSmall3, taurus1, taurus2);

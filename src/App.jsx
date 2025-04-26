@@ -196,7 +196,7 @@ function App() {
       u_outlineColor: { value: outlineColor },
       u_color1: { value: color1 },
       u_color2: { value: color2 }
-    }
+    };
 
     rayMat.uniforms = raymarch_uniforms;
     rayMat.vertexShader = rayVertex;
@@ -215,25 +215,22 @@ function App() {
       uniforms2.u_time.value += 0.01;
       meshRef2.current.rotation.x += speedRef.current
       meshRef2.current.rotation.y += speedRef.current
+      
+      uniforms.u_time.value = (Date.now() - time) / 1000;
 
       // RayMarch Code
       cameraForwardPos = camera.position.clone().add(camera.getWorldDirection(VECTOR3ZERO).multiplyScalar(camera.near));
       rayMarchPlane.position.copy(cameraForwardPos);
       rayMarchPlane.rotation.copy(camera.rotation);
 
-      uniforms.u_time.value = (Date.now() - time) / 1000;
-
-      // uniforms.u_time.value = clock.getElapsedTime();
-      // raymarch_uniforms.u_musicDispl.value = data[0];
-      // raymarch_uniforms.u_outlineColor.value = new THREE.Color(mapRange(data[1], 0, 200, 0, 1), mapRange(data[2], 0, 200, 0, 1), mapRange(data[3], 0, 200, 0, 1));
       rayMarchPlane.visible = rayMarchVisRef.current;
 
       if (analyserRef.current) {
         const data = analyserRef.current.getFrequencyData();
         const avg = analyserRef.current.getAverageFrequency();
         
-        speedRef.current = avg / 5000
-        console.log(speedRef)
+        speedRef.current = avg / 50000
+        // console.log(speedRef)
         
         let mids = 0
         for (let i = 8; i < 12; i++) {
@@ -251,7 +248,11 @@ function App() {
 
         uniforms.u_frequency.value = analyserRef.current.getAverageFrequency();
         uniforms2.u_frequency.value = analyserRef.current.getAverageFrequency();
+        
         // uniforms.u_color1.value = new THREE.Color(mapRange(data[4], 0, 200, 0, 1), mapRange(data[5], 0, 200, 0, 1), mapRange(data[6], 0, 200, 0, 1));
+        raymarch_uniforms.u_time.value = (Date.now() - time) / 1000;
+        raymarch_uniforms.u_musicDispl.value = analyserRef.current.getAverageFrequency();
+        raymarch_uniforms.u_outlineColor.value.setHSL(mids / 255, 1.0, 0.5);
       }
 
       renderer.render(scene, camera);
