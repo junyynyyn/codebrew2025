@@ -162,6 +162,7 @@ function App() {
 
   return (
     <div>
+      <h1>mp.3d</h1>
       <div className="input-overlay" id="input-overlay">
         <div className="input-content">
           <h3>Upload your song</h3>
