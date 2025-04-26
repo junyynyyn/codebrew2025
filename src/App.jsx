@@ -7,7 +7,21 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass';
 
+import rayVertex from './shaders/ray_vertex.glsl';
+import rayFragment from './shaders/ray_fragment.glsl';
+
+function mapRange(number, inMin, inMax, outMin, outMax) {
+  return ((number - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
+}
+
 function App() {
+  const [rayMarchVis, setRayMarchVis] = useState(false);
+
+  function switchState() {
+    setRayMarchVis(rayMarchVis != true);
+    console.log(rayMarchVis);
+  }
+
   const cameraRef = useRef(null);
   const analyserRef = useRef(null);
   const soundRef = useRef(null);
@@ -94,6 +108,12 @@ function App() {
 
     renderer.setSize(window.innerWidth,window.innerHeight);
 
+    const backgroundColor = new THREE.Color(0x000000);
+    renderer.setClearColor(backgroundColor, 1);
+
+    const light = new THREE.DirectionalLight(0xffffff, 0.5);
+    light.position.set(0.5, 1, 1);
+    scene.add(light);
 
     const uniforms = {
       u_resolution: {type: 'v2', value: new THREE.Vector2(window.innerWidth, window.innerHeight)},
@@ -101,6 +121,7 @@ function App() {
       u_frequency: {value: 0.0},
       u_color: { value: new THREE.Color(1, 1, 1) }
     }
+
     const mat = new THREE.ShaderMaterial({
       uniforms,
       vertexShader: document.getElementById('vertexshader').textContent,
@@ -132,8 +153,55 @@ function App() {
     mesh2.material.wireframe = true
     meshRef2.current = mesh2
 
-
     camera.position.z = 5;
+
+    // Raymarching Plane
+    const rayPlane = new THREE.PlaneGeometry();
+    const rayMat = new THREE.ShaderMaterial();
+    const rayMarchPlane = new THREE.Mesh(rayPlane, rayMat);
+
+    const nearPlaneWidth = camera.near * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect * 2;
+    const nearPlaneHeight = nearPlaneWidth / camera.aspect;
+    rayMarchPlane.scale.set(nearPlaneWidth, nearPlaneHeight, 1);
+
+    const outlineColor = new THREE.Color(0x0000ff);
+    const color1 = new THREE.Color(0x888888);
+    const color2 = new THREE.Color(0x555555);
+
+    const raymarch_uniforms = {
+      u_eps: {value: 0.01},
+      u_maxDis: {value: 50},
+      u_maxSteps: {value: 100},
+
+      u_clearColor: {value: backgroundColor},
+
+      u_camPos: { value: camera.position },
+      u_camToWorldMat: { value: camera.matrixWorld },
+      u_camInvProjMat: { value: camera.projectionMatrixInverse },
+
+      u_lightDir: { value: light.position },
+      u_lightColor: {value: light.color },
+
+      u_diffIntensity: { value: 0.5 },
+      u_specIntensity: { value: 3},
+      u_ambientIntensity: { value: 0.15 },
+      u_shininess: { value: 16},
+
+      u_time: {value: 0}, 
+      u_musicDispl: {value: 0},
+      u_outlineColor: { value: outlineColor },
+      u_color1: { value: color1 },
+      u_color2: { value: color2 }
+    }
+
+    rayMat.uniforms = raymarch_uniforms;
+    rayMat.vertexShader = rayVertex;
+    rayMat.fragmentShader = rayFragment;
+    scene.add(rayMarchPlane);
+
+    let cameraForwardPos = new THREE.Vector3(0, 0, -1);
+    const VECTOR3ZERO = new THREE.Vector3(0,0,0);
+    let time = Date.now();
 
     // Animation loop
     function animate() {
@@ -143,6 +211,19 @@ function App() {
       uniforms2.u_time.value += 0.01;
       meshRef2.current.rotation.x += speedRef.current
       meshRef2.current.rotation.y += speedRef.current
+
+      // RayMarch Code
+      cameraForwardPos = camera.position.clone().add(camera.getWorldDirection(VECTOR3ZERO).multiplyScalar(camera.near));
+      rayMarchPlane.position.copy(cameraForwardPos);
+      rayMarchPlane.rotation.copy(camera.rotation);
+
+      uniforms.u_time.value = (Date.now() - time) / 1000;
+
+      // uniforms.u_time.value = clock.getElapsedTime();
+      // raymarch_uniforms.u_musicDispl.value = data[0];
+      // raymarch_uniforms.u_outlineColor.value = new THREE.Color(mapRange(data[1], 0, 200, 0, 1), mapRange(data[2], 0, 200, 0, 1), mapRange(data[3], 0, 200, 0, 1));
+      rayMarchPlane.visible = true;
+
       if (analyserRef.current) {
         const data = analyserRef.current.getFrequencyData();
         const avg = analyserRef.current.getAverageFrequency();
@@ -166,8 +247,9 @@ function App() {
 
         uniforms.u_frequency.value = analyserRef.current.getAverageFrequency();
         uniforms2.u_frequency.value = analyserRef.current.getAverageFrequency();
-        // uniforms.u_time.value = clock.getElapsedTime();
+        // uniforms.u_color1.value = new THREE.Color(mapRange(data[4], 0, 200, 0, 1), mapRange(data[5], 0, 200, 0, 1), mapRange(data[6], 0, 200, 0, 1));
       }
+
       renderer.render(scene, camera);
     }
 
@@ -216,6 +298,7 @@ function App() {
         <div className="pause-play-button">
           <button onClick={play}>play</button>
           <button onClick={() => { if (soundRef.current) soundRef.current.stop(); }}>stop</button>
+          <button onClick={switchState}>Switch Visual</button>
         </div>
       </div>
     </div>
