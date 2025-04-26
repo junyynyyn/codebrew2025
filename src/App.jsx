@@ -5,6 +5,10 @@ import './App.css';
 import rayVertex from './shaders/ray_vertex.glsl';
 import rayFragment from './shaders/ray_fragment.glsl';
 
+function mapRange(number, inMin, inMax, outMin, outMax) {
+  return ((number - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
+}
+
 function App() {
   const cameraRef = useRef(null);
   const analyserRef = useRef(null);
@@ -87,11 +91,11 @@ function App() {
     const renderer = new THREE.WebGLRenderer({ antialias: true, canvas: canvReference });
     renderer.setSize(2 * window.innerWidth / 3, 2 * window.innerHeight / 3);
 
-    const backgroundColor = new THREE.Color(0x3399ee);
+    const backgroundColor = new THREE.Color(0x000000);
     renderer.setClearColor(backgroundColor, 1);
 
-    const light = new THREE.DirectionalLight(0xffffff, 1);
-    light.position.set(1,1,1);
+    const light = new THREE.DirectionalLight(0xffffff, 0.5);
+    light.position.set(0.5, 1, 1);
     scene.add(light);
 
     // Create visualization line
@@ -117,9 +121,13 @@ function App() {
     const nearPlaneHeight = nearPlaneWidth / camera.aspect;
     rayMarchPlane.scale.set(nearPlaneWidth, nearPlaneHeight, 1);
 
+    const outlineColor = new THREE.Color(0x0000ff);
+    const color1 = new THREE.Color(0x888888);
+    const color2 = new THREE.Color(0x555555);
+
     const uniforms = {
       u_eps: {value: 0.01},
-      u_maxDis: {value: 1000},
+      u_maxDis: {value: 50},
       u_maxSteps: {value: 100},
 
       u_clearColor: {value: backgroundColor},
@@ -137,7 +145,10 @@ function App() {
       u_shininess: { value: 16},
 
       u_time: {value: 0}, 
-      u_musicDispl: {value: 0}
+      u_musicDispl: {value: 0},
+      u_outlineColor: { value: outlineColor },
+      u_color1: { value: color1 },
+      u_color2: { value: color2 }
     }
 
     rayMat.uniforms = uniforms;
@@ -155,6 +166,8 @@ function App() {
       rayMarchPlane.position.copy(cameraForwardPos);
       rayMarchPlane.rotation.copy(camera.rotation);
 
+      uniforms.u_time.value = (Date.now() - time) / 1000;
+
       if (analyserRef.current) {
         const data = analyserRef.current.getFrequencyData();
         const positions = lineRef.current.geometry.attributes.position.array;
@@ -163,6 +176,9 @@ function App() {
           positions[i * 3 + 1] = data[i] / 100;
         }
         uniforms.u_musicDispl.value = data[0];
+        uniforms.u_outlineColor.value = new THREE.Color(mapRange(data[1], 0, 200, 0, 1), mapRange(data[2], 0, 200, 0, 1), mapRange(data[3], 0, 200, 0, 1));
+        // uniforms.u_color1.value = new THREE.Color(mapRange(data[4], 0, 200, 0, 1), mapRange(data[5], 0, 200, 0, 1), mapRange(data[6], 0, 200, 0, 1));
+        
         
         lineRef.current.geometry.attributes.position.needsUpdate = true;
       }
