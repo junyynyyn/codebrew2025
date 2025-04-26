@@ -24,6 +24,8 @@ function App() {
     
     if (file && file.type === 'audio/mpeg') {
       // Clean up previous audio if exists
+      document.getElementById("track-name").innerText = file.name; // Update the track name
+      document.getElementById("input-overlay").style.display = "none"; // Hide the input overlay
       if (soundRef.current) {
         soundRef.current.stop();
         if (listenerRef.current) {
@@ -160,17 +162,35 @@ function App() {
 
   return (
     <div>
+      <div className="input-overlay" id="input-overlay">
+        <div className="input-content">
+          <h3>Upload your song</h3>
+          <input
+            className="file-input"
+            type="file"
+            accept=".mp3,audio/mpeg"
+            onChange={handleFileChange}
+          />
+        </div>
+        <div className="colour-overlay">
+        </div>
+      </div>
+
+
       <div>
         <canvas id="threeJSCanvas" />
       </div>
-      <button onClick={play}>play</button>
-      <div>
-        <h2>Upload MP3 File</h2>
-        <input
-          type="file"
-          accept=".mp3,audio/mpeg"
-          onChange={handleFileChange}
-        />
+      <div className="audio-track">
+        <div className="left-content">
+          <div className="album-art"></div>
+          <div className="track">
+            <div className="track-name" id="track-name">Untitled</div>
+          </div>
+        </div>
+        <div className="pause-play-button">
+          <button onClick={play}>play</button>
+          <button onClick={() => { if (soundRef.current) soundRef.current.stop(); }}>stop</button>
+        </div>
       </div>
     </div>
   );
