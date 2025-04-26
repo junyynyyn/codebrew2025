@@ -15,11 +15,15 @@ function mapRange(number, inMin, inMax, outMin, outMax) {
 }
 
 function App() {
+  const rayMarchVisRef = useRef(false);
   const [rayMarchVis, setRayMarchVis] = useState(false);
 
   function switchState() {
-    setRayMarchVis(rayMarchVis != true);
-    console.log(rayMarchVis);
+    setRayMarchVis(prev => {
+      const newState = !prev;
+      rayMarchVisRef.current = newState;
+      return newState;
+    });
   }
 
   const cameraRef = useRef(null);
@@ -222,7 +226,7 @@ function App() {
       // uniforms.u_time.value = clock.getElapsedTime();
       // raymarch_uniforms.u_musicDispl.value = data[0];
       // raymarch_uniforms.u_outlineColor.value = new THREE.Color(mapRange(data[1], 0, 200, 0, 1), mapRange(data[2], 0, 200, 0, 1), mapRange(data[3], 0, 200, 0, 1));
-      rayMarchPlane.visible = true;
+      rayMarchPlane.visible = rayMarchVisRef.current;
 
       if (analyserRef.current) {
         const data = analyserRef.current.getFrequencyData();
