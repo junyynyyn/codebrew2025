@@ -61,16 +61,9 @@ function App() {
         sound.setBuffer(buffer);
         sound.setLoop(true);
         sound.setVolume(0.5);
-        
-        if (sound.context.state === 'suspended') {
-          sound.context.resume().then(() => {
-            sound.play();
-            analyserRef.current = new THREE.AudioAnalyser(sound, 32);
-          });
-        } else {
-          sound.play();
-          analyserRef.current = new THREE.AudioAnalyser(sound, 32);
-        }
+    
+        sound.play();
+        analyserRef.current = new THREE.AudioAnalyser(sound, 32);
       },
       undefined,
       (error) => {
